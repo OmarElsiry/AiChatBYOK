@@ -168,7 +168,6 @@ export function updateModelStatus() {
   const m = models.find(x => x.id === model);
   const p = getProtocol(model);
   getEl('model-status').textContent = m ? m.display_name || m.id : '';
-  getEl('protocol-badge').textContent = p;
   checkImageSupport();
   refreshDropdowns();
 }
@@ -193,13 +192,14 @@ export function checkImageSupport() {
   }
 }
 
-export function switchPane(pane) {
-  document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.toggle('active', t.dataset.pane === pane));
-  document.querySelectorAll('.sidebar-pane').forEach(p => p.classList.toggle('active', p.id === `pane-${pane}`));
-  getEl('chat-content').style.display = pane === 'chat' ? 'flex' : 'none';
-  getEl('image-gen-area').classList.toggle('active', pane === 'images');
-  getEl('platform-area').style.display = pane === 'platform' ? 'block' : 'none';
-  getEl('nav-new-btn').textContent = pane === 'images' ? 'New Image' : 'New Chat';
+export function showPlatformView() {
+  getEl('chat-content').style.display = 'none';
+  getEl('platform-area').style.display = 'block';
+}
+
+export function showChatView() {
+  getEl('chat-content').style.display = 'flex';
+  getEl('platform-area').style.display = 'none';
 }
 
 export function populateSelects() {
@@ -236,11 +236,18 @@ export function populateSelects() {
   initDropdowns();
 }
 
-export function renderConversations() {
+export function renderConversations(filter) {
   const list = getEl('conversation-list');
+  if (!list) return;
   const convs = store.get('conversations');
   const currentId = store.get('currentConversationId');
-  list.innerHTML = convs.map(c =>
+  const q = (filter || '').toLowerCase();
+  const filtered = q ? convs.filter(c => (c.title || '').toLowerCase().includes(q)) : convs;
+  if (!filtered.length) {
+    list.innerHTML = `<div class="config-empty">${q ? 'No matching conversations' : 'No conversations yet'}</div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(c =>
     `<div class="conversation-item${c.id === currentId ? ' active' : ''}" data-conv-id="${c.id}">${escapeHtml(c.title)}</div>`
   ).join('');
 }

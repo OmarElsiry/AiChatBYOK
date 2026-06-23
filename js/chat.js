@@ -2,7 +2,7 @@ import { store } from './store.js';
 import { streamChat } from './stream.js';
 import { escapeHtml, getEl, autoResize, getProtocol, supportsImageInput } from './utils.js';
 import * as render from './render.js';
-import { showSettings } from './settings.js';
+import { showConfigManager } from './config.js';
 
 export function stopGeneration() {
   store.stopStreaming();
@@ -23,6 +23,7 @@ export function sendSuggestion(text) {
 }
 
 export function newChat() {
+  render.showChatView();
   if (store.get('isStreaming')) stopGeneration();
   store.set('currentConversationId', null);
   getEl('messages-container').innerHTML = '';
@@ -51,9 +52,9 @@ export async function sendMessage() {
   const imageData = store.get('attachedImage');
 
   if ((!text && !imageData) || store.get('isStreaming')) return;
-  if (!store.get('apiKey')) { showSettings(); return; }
+  if (!store.getActiveConfig()) { showConfigManager(); return; }
   if (!store.get('model')) {
-    render.appendMessage('assistant', 'No model selected. Open Settings and select a model, or pick one from the dropdown in the sidebar header.');
+    render.appendMessage('assistant', 'No model selected. Select one from the dropdown in the header.');
     return;
   }
 

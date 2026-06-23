@@ -1,6 +1,6 @@
 import { store } from './store.js';
+import { fetchWithRotation } from './api.js';
 import { escapeHtml, getEl, getProtocol, supportsImageInput, getRoots } from './utils.js';
-import { buildHeaders } from './api.js';
 import * as render from './render.js';
 
 export async function handleFileSelect(e) {
@@ -83,13 +83,11 @@ export async function generateImage() {
     if (proto === 'openai') {
       const size = getEl('img-size').value;
       const quality = getEl('img-quality').value;
-      const res = await fetch(`${apiRoot}/images/generations`, {
+      const res = await fetchWithRotation(`${apiRoot}/images/generations`, {
         method: 'POST',
-        headers: buildHeaders(),
         body: JSON.stringify({ model, prompt, n: count, size, quality }),
         signal: store.get('abortController')?.signal,
       });
-      if (!res.ok) throw new Error((await res.json())?.error?.message || 'Generation failed');
       const d = await res.json();
       images = d.data.map(img => img.b64_json ? `data:image/png;base64,${img.b64_json}` : img.url);
     } else if (proto === 'vertexai') {
@@ -97,26 +95,21 @@ export async function generateImage() {
       const h = parseInt(getEl('img-height').value, 10) || 1024;
       const provider = model.split('/')[0] || 'google';
       const mName = model.split('/').pop() || model;
-      const body = {
-        instances: [{ prompt }],
-        parameters: { sampleCount: count, imageSize: `${w}x${h}` },
-      };
-      const res = await fetch(`${baseRoot}/vertex-ai/v1/publishers/${provider}/models/${mName}:predict`, {
+      const res = await fetchWithRotation(`${baseRoot}/vertex-ai/v1/publishers/${provider}/models/${mName}:predict`, {
         method: 'POST',
-        headers: buildHeaders(),
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          instances: [{ prompt }],
+          parameters: { sampleCount: count, imageSize: `${w}x${h}` },
+        }),
       });
-      if (!res.ok) throw new Error((await res.text()) || 'Generation failed');
       const d = await res.json();
       images = (d.predictions || []).map(p => `data:${p.mimeType || 'image/png'};base64,${p.bytesBase64Encoded}`);
     } else {
-      const res = await fetch(`${apiRoot}/images/generations`, {
+      const res = await fetchWithRotation(`${apiRoot}/images/generations`, {
         method: 'POST',
-        headers: buildHeaders(),
         body: JSON.stringify({ model, prompt, n: count }),
         signal: store.get('abortController')?.signal,
       });
-      if (!res.ok) throw new Error('Generation failed');
       const d = await res.json();
       images = d.data.map(img => img.b64_json ? `data:image/png;base64,${img.b64_json}` : img.url);
     }

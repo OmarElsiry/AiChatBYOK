@@ -18,7 +18,11 @@ function hasCap(m, cap) {
   }
   if (cap === 'vision') return m.input_modalities?.includes('image');
   if (cap === 'imggen') return m.output_modalities?.includes('image');
-  if (cap === 'free') return m.pricing?.free === true;
+  if (cap === 'free') {
+    const id = m.id.toLowerCase();
+    const name = (m.display_name || '').toLowerCase();
+    return m.pricing?.free === true || id.includes('free') || name.includes('free');
+  }
   return m.input_modalities?.includes(cap) || m.output_modalities?.includes(cap);
 }
 
@@ -98,14 +102,30 @@ function buildGroupHTML(models, currentModel, filterCaps, searchQuery, label) {
 }
 
 function buildPanelHTML(models, currentModel, filterCaps, searchQuery) {
-  const groups = groupModels(models);
-
-  const sortedKeys = [...new Set([...GROUP_ORDER, ...Object.keys(groups)])].filter(k => groups[k]);
+  const configNames = [...new Set(models.map(m => m._configName).filter(Boolean))];
+  const multiConfig = configNames.length > 1;
 
   let bodyHTML = '';
-  sortedKeys.forEach(k => {
-    bodyHTML += buildGroupHTML(groups[k], currentModel, filterCaps, searchQuery, GROUP_LABELS[k] || k);
-  });
+
+  if (multiConfig) {
+    configNames.forEach(cn => {
+      const cfgModels = models.filter(m => m._configName === cn);
+      const groups = groupModels(cfgModels);
+      const sortedKeys = [...new Set([...GROUP_ORDER, ...Object.keys(groups)])].filter(k => groups[k]);
+      bodyHTML += `<div class="dd-config-group" data-config="${escapeHtml(cn)}">`;
+      bodyHTML += `<div class="dd-config-header">${escapeHtml(cn)} <span class="dd-config-count">${cfgModels.length}</span></div>`;
+      sortedKeys.forEach(k => {
+        bodyHTML += buildGroupHTML(groups[k], currentModel, filterCaps, searchQuery, GROUP_LABELS[k] || k);
+      });
+      bodyHTML += `</div>`;
+    });
+  } else {
+    const groups = groupModels(models);
+    const sortedKeys = [...new Set([...GROUP_ORDER, ...Object.keys(groups)])].filter(k => groups[k]);
+    sortedKeys.forEach(k => {
+      bodyHTML += buildGroupHTML(groups[k], currentModel, filterCaps, searchQuery, GROUP_LABELS[k] || k);
+    });
+  }
 
   if (!bodyHTML) {
     bodyHTML = '<div class="dd-empty">No models match</div>';

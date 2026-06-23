@@ -24,52 +24,15 @@
 
 <div class="main-container">
   <aside class="sidebar">
-    <div class="sidebar-tabs">
-      <button class="sidebar-tab active" data-pane="chat">Chat</button>
-      <button class="sidebar-tab" data-pane="images">Images</button>
-      <button class="sidebar-tab" data-pane="platform">Platform</button>
-    </div>
     <div class="sidebar-content">
-      <div class="sidebar-pane active" id="pane-chat">
-        <div class="sidebar-section" style="flex:1;overflow-y:auto">
-          <h3>History</h3>
-          <div id="conversation-list" class="conversation-list"></div>
-        </div>
+      <div class="sidebar-section" style="flex:1;overflow-y:auto;padding:var(--spacing-lg)">
+        <h3>History</h3>
+        <input type="text" id="history-search" class="sidebar-search" placeholder="Search conversations..." spellcheck="false">
+        <div id="conversation-list" class="conversation-list"></div>
       </div>
-      <div class="sidebar-pane" id="pane-images">
-        <div class="sidebar-section">
-          <h3>Image Model</h3>
-          <select id="img-model" class="model-select" style="width:100%;max-width:100%;margin-bottom:var(--spacing-md)"></select>
-          <h3>Settings</h3>
-          <label style="font-size:12px;color:var(--body);display:block;margin-bottom:4px">Size</label>
-          <select id="img-size" class="model-select" style="width:100%;max-width:100%;margin-bottom:var(--spacing-md)">
-            <option value="1024x1024">1024x1024</option>
-            <option value="1536x1024">1536x1024</option>
-            <option value="1024x1536">1024x1536</option>
-            <option value="1920x1080">1920x1080</option>
-            <option value="1080x1920">1080x1920</option>
-          </select>
-          <label style="font-size:12px;color:var(--body);display:block;margin-bottom:4px">Count</label>
-          <select id="img-count" class="model-select" style="width:100%;max-width:100%;margin-bottom:var(--spacing-md)">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-          </select>
-          <label style="font-size:12px;color:var(--body);display:block;margin-bottom:4px">Quality</label>
-          <select id="img-quality" class="model-select" style="width:100%;max-width:100%">
-            <option value="standard">Standard</option>
-            <option value="high">High</option>
-          </select>
-        </div>
-      </div>
-      <div class="sidebar-pane" id="pane-platform">
-        <div class="sidebar-section">
-          <h3>Management</h3>
-          <button class="button-subtle" id="btn-flow-rate" style="width:100%;margin-bottom:var(--spacing-sm)">Flow Rate</button>
-          <button class="button-subtle" id="btn-balance" style="width:100%;margin-bottom:var(--spacing-sm)">PAYG Balance</button>
-          <button class="button-subtle" id="btn-subscription-btn" style="width:100%;margin-bottom:var(--spacing-sm)">Subscription</button>
-        </div>
+      <div class="sidebar-section" style="padding:var(--spacing-lg);border-top:1px solid var(--canvas-soft);flex-shrink:0">
+        <h3>Keys</h3>
+        <button class="button-subtle" id="btn-key-usage" style="width:100%">Key Usage Dashboard</button>
       </div>
     </div>
   </aside>
@@ -79,7 +42,6 @@
       <div class="chat-header-left">
         <h1 id="chat-title">New Chat</h1>
         <select id="header-model" class="model-select"></select>
-        <span id="protocol-badge" style="font-size:11px;padding:2px 8px;border-radius:var(--rounded-pill);background:var(--canvas-soft);color:var(--body);white-space:nowrap">openai</span>
         <span id="img-support-badge" style="font-size:11px;padding:2px 8px;border-radius:var(--rounded-pill);background:var(--canvas-soft);color:var(--body);white-space:nowrap;display:none"></span>
       </div>
       <span id="token-count" style="font-size:12px;color:var(--body);white-space:nowrap"></span>
@@ -111,19 +73,6 @@
       </div>
     </div>
 
-    <div id="image-gen-area" class="image-gen-area">
-      <div class="image-gen-form">
-        <label>Prompt</label>
-        <textarea id="img-prompt" rows="3" placeholder="A cute cat wearing a tiny hat..."></textarea>
-        <div class="image-gen-row">
-          <div><label>Width</label><input type="number" id="img-width" value="1024" min="256" max="3840" step="16"></div>
-          <div><label>Height</label><input type="number" id="img-height" value="1024" min="256" max="3840" step="16"></div>
-        </div>
-        <button class="button-primary" id="btn-generate-image" style="width:100%">Generate</button>
-      </div>
-      <div id="image-gallery" class="image-gallery"></div>
-    </div>
-
     <div id="platform-area" style="flex:1;display:none;overflow-y:auto">
       <div class="platform-dashboard" id="platform-dashboard"></div>
     </div>
@@ -133,27 +82,6 @@
       <span id="status-text">Ready</span>
       <span style="flex:1"></span>
       <span id="model-status"></span>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="settings-modal">
-  <div class="modal-card">
-    <h2>Settings</h2>
-    <label>ZenMux API Key</label>
-    <input type="password" id="api-key-input" placeholder="sk-...">
-    <label>Management API Key (for Platform)</label>
-    <input type="password" id="mgmt-key-input" placeholder="sk-mgmt-...">
-    <label>API Base URL</label>
-    <input type="text" id="base-url-input" placeholder="https://zenmux.ai/api/v1">
-    <label>Default Model</label>
-    <select id="default-model-select"></select>
-    <label style="display:flex;align-items:center;gap:var(--spacing-sm);margin-bottom:var(--spacing-lg);cursor:pointer">
-      <input type="checkbox" id="remember-key"> Remember API keys
-    </label>
-    <div class="modal-actions">
-      <button class="button-subtle" id="btn-settings-cancel">Cancel</button>
-      <button class="button-primary" id="btn-settings-save">Save</button>
     </div>
   </div>
 </div>

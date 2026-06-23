@@ -1,5 +1,5 @@
 import { store } from './store.js';
-import { buildHeaders } from './api.js';
+import { fetchWithRotation, getCurrentKeyLabel } from './api.js';
 import { escapeHtml, getRoots } from './utils.js';
 
 const PROVIDERS = {
@@ -164,7 +164,8 @@ async function* readSSE(reader, decoder, signal) {
 
 export async function streamChat(providerName, history, signal, formValues, callbacks) {
   const provider = PROVIDERS[providerName] || PROVIDERS.openai;
-  const roots = getRoots(store.get('baseURL'));
+  const cfg = store.getActiveConfig();
+  const roots = getRoots(cfg?.baseURL);
 
   const url = provider.buildUrl(store.get('model'), roots);
   const body = provider.buildBody(store.get('model'), history, formValues);
@@ -172,12 +173,23 @@ export async function streamChat(providerName, history, signal, formValues, call
   console.log('[STREAM] POST', url, 'model:', store.get('model'), 'provider:', providerName);
   console.log('[STREAM] Body keys:', Object.keys(body).join(','));
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: buildHeaders(),
-    body: JSON.stringify(body),
-    signal,
-  });
+  let res;
+  try {
+    res = await fetchWithRotation(url, {
+      method: 'POST',
+      body: JSON.stringify(body),
+      signal,
+    });
+  } catch (e) {
+    if (e.name !== 'AbortError') {
+      const model = store.get('models').find(m => m.id === store.get('model'));
+      const name = model?.display_name || store.get('model') || 'selected model';
+      if (/image|vision|visual/i.test(e.message) && /not support|not accept|unsupported|doesn't support|cannot .*process|cannot .*read|does not.*image|unable to/i.test(e.message)) {
+        throw new Error(`The model "${escapeHtml(name)}" does not support image input. Select a vision-capable model (e.g. openai/gpt-5, anthropic/claude-sonnet-4.5, google/gemini-2.5-pro) then try again.`);
+      }
+    }
+    throw e;
+  }
 
   console.log('[STREAM] Response status:', res.status, 'type:', res.headers.get('content-type'));
 
