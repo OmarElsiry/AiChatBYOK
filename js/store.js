@@ -156,7 +156,7 @@ export const store = {
         _notify('attachedImage', _state.attachedImage);
         resolve(_state.attachedImage);
       };
-      reader.onerror = () => reject(new Error(`Cannot read "${file.name}"`));
+      reader.onerror = () => reject(new Error(`Cannot read "${file.name}" — file may be too large or corrupted`));
       reader.readAsDataURL(file);
     });
   },

@@ -1,6 +1,7 @@
 import { store } from './store.js';
 import { escapeHtml, getEl, getProtocol, groupModels } from './utils.js';
 import { renderMd } from './markdown.js';
+import { initDropdowns, refreshDropdowns } from './dropdown.js';
 
 export function showWelcome() {
   getEl('welcome-screen').style.display = 'flex';
@@ -169,6 +170,7 @@ export function updateModelStatus() {
   getEl('model-status').textContent = m ? m.display_name || m.id : '';
   getEl('protocol-badge').textContent = p;
   checkImageSupport();
+  refreshDropdowns();
 }
 
 export function checkImageSupport() {
@@ -204,19 +206,15 @@ export function populateSelects() {
   const models = store.get('models');
   const imageModels = store.get('imageModels');
   const currentModel = store.get('model');
-  const ids = ['header-model', 'sidebar-model', 'default-model-select', 'img-model'];
-
-  const groups = groupModels(models);
-  const groupOrder = ['openai', 'anthropic', 'google', 'deepseek', 'other'];
-  const groupLabels = { openai: 'OpenAI', anthropic: 'Anthropic', google: 'Google', deepseek: 'DeepSeek', other: 'Other' };
+  const ids = ['header-model', 'default-model-select', 'img-model'];
 
   ids.forEach(id => {
     const sel = getEl(id);
     if (!sel) return;
-    sel.innerHTML = '';
     const isImg = id === 'img-model';
     const filtered = isImg ? imageModels : models;
 
+    sel.innerHTML = '';
     if (!filtered || filtered.length === 0) {
       const o = document.createElement('option');
       o.value = '';
@@ -226,30 +224,16 @@ export function populateSelects() {
       return;
     }
 
-    if (!isImg) {
-      const fg = groupModels(filtered);
-      groupOrder.forEach(g => {
-        if (!fg[g]) return;
-        const og = document.createElement('optgroup');
-        og.label = groupLabels[g] || g;
-        fg[g].forEach(m => {
-          const o = document.createElement('option');
-          o.value = m.id;
-          o.textContent = m.display_name || m.id;
-          if (m.id === currentModel) o.selected = true;
-          og.appendChild(o);
-        });
-        sel.appendChild(og);
-      });
-    } else {
-      filtered.forEach(m => {
-        const o = document.createElement('option');
-        o.value = m.id;
-        o.textContent = m.display_name || m.id;
-        sel.appendChild(o);
-      });
-    }
+    filtered.forEach(m => {
+      const o = document.createElement('option');
+      o.value = m.id;
+      o.textContent = m.display_name || m.id;
+      if (m.id === currentModel) o.selected = true;
+      sel.appendChild(o);
+    });
   });
+
+  initDropdowns();
 }
 
 export function renderConversations() {

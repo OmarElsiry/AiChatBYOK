@@ -7,6 +7,7 @@ import * as image from './image.js';
 import * as platform from './platform.js';
 import { showSettings, closeSettings, saveSettings } from './settings.js';
 
+
 // ---- Init ----
 store.loadState();
 
@@ -52,7 +53,7 @@ if (store.get('apiKey')) {
 
 // ---- Store subscribers ----
 store.on('model', (model) => {
-  ['header-model', 'sidebar-model', 'default-model-select'].forEach(id => {
+  ['header-model', 'default-model-select'].forEach(id => {
     const el = getEl(id);
     if (el) el.value = model || '';
   });
@@ -64,12 +65,17 @@ store.on('conversations', () => {
   render.renderConversations();
 });
 
+// ---- Sidebar toggle ----
+getEl('sidebar-toggle').addEventListener('click', () => {
+  document.querySelector('.sidebar').classList.toggle('collapsed');
+});
+
 // ---- Navigation ----
 getEl('btn-settings').addEventListener('click', showSettings);
 getEl('nav-new-btn').addEventListener('click', chat.newChat);
 
 // ---- Model selects ----
-['header-model', 'sidebar-model', 'default-model-select'].forEach(id => {
+['header-model', 'default-model-select'].forEach(id => {
   const el = getEl(id);
   if (el) {
     el.addEventListener('change', (e) => {
