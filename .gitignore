@@ -1,0 +1,13 @@
+node_modules/
+test-results/
+package-lock.json
+package.json
+.playwright/
+*.test.js
+*.spec.js
+playwright.config.js
+vitest.config.js
+sw.js
+.env.test
+dev-server.mjs
+npm-debug.log*
